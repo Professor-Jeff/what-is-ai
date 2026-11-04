@@ -59,7 +59,14 @@
   #qrPanel .qrTitle { font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   #qrPanel svg { width: 220px; height: 220px; border: 8px solid #fff; background: #fff; display: block; }
   #qrPanel .qrUrl { font-size: .85rem; color: #6b7280; letter-spacing: .03em; }
-  @media (max-width: 700px) { #qrPanel svg { width: 160px; height: 160px; } }
+  /* when turned on, the QR takes the stage: big, centered in the open area, network dimmed behind it */
+  #qrPanel.open { left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); padding: 26px 32px 22px; gap: 10px; }
+  #qrPanel.open .qrTitle { font-size: 1.25rem; }
+  #qrPanel.open svg { width: min(68vw, 62vh, 380px); height: min(68vw, 62vh, 380px); }
+  #qrPanel.open .qrUrl { font-size: 1.05rem; }
+  @media (min-width: 1000px) { #qrPanel.open { left: auto; right: 7vw; transform: translateY(-50%); } }
+  body.qrOpen #net { opacity: .18; transition: opacity .6s; }
+  #net { transition: opacity .6s; }
   /* subtle 2-minute talk timer, upper right, desktop only; click restarts, double-click hides */
   #talkTimer { position: fixed; top: 6px; right: 14px; z-index: 30; font-size: .85rem; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .03em; color: #6b6b75; background: rgba(255,255,255,.06); padding: 4px 9px; border-radius: 999px; cursor: pointer; user-select: none; }
   #talkTimer.warn { color: #f59e0b; }
@@ -134,7 +141,7 @@ const $ = id => document.getElementById(id);
 
 // presenter keys: right arrow or space begins the demos
 document.addEventListener("keydown", e => {
-  if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { if (!qrPanel.classList.contains("open")) location.href = $("begin").href; }
+  if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); location.href = $("begin").href; }
   if (e.key === "Escape") setQr(false);
 });
 
@@ -142,6 +149,7 @@ document.addEventListener("keydown", e => {
 const qrBtn = $("qrBtn"), qrPanel = $("qrPanel");
 function setQr(open) {
   qrPanel.classList.toggle("open", open);
+  document.body.classList.toggle("qrOpen", open);
   qrBtn.textContent = open ? "Hide QR code" : "Show QR code";
   qrBtn.setAttribute("aria-expanded", String(open));
 }
