@@ -16,6 +16,12 @@
   #net circle { fill: var(--bg); stroke-width: 1.5; }
   @keyframes pulse { 0%, 100% { opacity: .18; } 50% { opacity: .55; } }
   #net .p { animation: pulse 6s ease-in-out infinite; }
+  /* glowing twins: blurred, bright, fading in and out slowly at staggered times */
+  @keyframes shine { 0%, 100% { opacity: 0; } 50% { opacity: .7; } }
+  #net .g { fill: none; stroke-width: 2.5; filter: url(#blur); opacity: 0; animation: shine var(--d, 10s) ease-in-out infinite; animation-delay: var(--t, 0s); }
+  #net .cg { stroke: none; filter: url(#blur); opacity: 0; animation: shine var(--d, 9s) ease-in-out infinite; animation-delay: var(--t, 0s); }
+  #net .n { transition: none; }
+  @media (prefers-reduced-motion: reduce) { #net .p, #net .g, #net .cg { animation: none; } #net .g, #net .cg { opacity: 0; } }
   /* brand */
   .brand { position: relative; display: flex; align-items: baseline; gap: 10px; letter-spacing: -.02em; }
   .brand .ted { color: var(--red); font-weight: 800; font-size: 1.9rem; }
@@ -108,13 +114,22 @@ const $ = id => document.getElementById(id);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const xs = [1000, 1230, 1460], layers = [2, 8, 5];
   const ys = (n, i) => H / 2 + (i - (n - 1) / 2) * (n === 8 ? 78 : n === 5 ? 120 : 220);
-  let s = "", d = 0;
+  // a fixed pseudo-random sequence so the shimmer looks organic but is the same every load
+  let seed = 7; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  let base = "", glow = "", d = 0;
   for (let L = 0; L < 2; L++) for (let i = 0; i < layers[L]; i++) for (let j = 0; j < layers[L + 1]; j++) {
-    const warm = (i * 7 + j * 3) % 5 === 0;
-    s += `<line class="p" style="animation-delay:${-(d++ % 23) * 0.37}s" x1="${xs[L]}" y1="${ys(layers[L], i)}" x2="${xs[L + 1]}" y2="${ys(layers[L + 1], j)}" stroke="${warm ? "#e62b1e" : "#60a5fa"}" stroke-opacity="${warm ? .55 : .35}"/>`;
+    const warm = (i * 7 + j * 3) % 5 === 0, color = warm ? "#e62b1e" : "#60a5fa";
+    const x1 = xs[L], y1 = ys(layers[L], i), x2 = xs[L + 1], y2 = ys(layers[L + 1], j);
+    base += `<line class="p" style="animation-delay:${-(d++ % 23) * 0.37}s" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-opacity="${warm ? .55 : .35}"/>`;
+    // about a third of the lines get a slow glow, each on its own period and phase
+    if (rnd() < 0.36) glow += `<line class="g" style="--d:${(9 + rnd() * 9).toFixed(1)}s;--t:${(-rnd() * 18).toFixed(1)}s" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-opacity=".55"/>`;
   }
-  for (let L = 0; L < 3; L++) for (let i = 0; i < layers[L]; i++) s += `<circle cx="${xs[L]}" cy="${ys(layers[L], i)}" r="${L === 1 ? 9 : 13}" stroke="${L === 2 ? "#4ade80" : "#60a5fa"}"/>`;
-  svg.innerHTML = s;
+  for (let L = 0; L < 3; L++) for (let i = 0; i < layers[L]; i++) {
+    const cx = xs[L], cy = ys(layers[L], i), r = L === 1 ? 9 : 13, color = L === 2 ? "#4ade80" : "#60a5fa";
+    glow += `<circle class="cg" style="--d:${(7 + rnd() * 8).toFixed(1)}s;--t:${(-rnd() * 15).toFixed(1)}s" cx="${cx}" cy="${cy}" r="${r + 8}" fill="${color}" fill-opacity=".6"/>`;
+    base += `<circle class="n" cx="${cx}" cy="${cy}" r="${r}" stroke="${color}"/>`;
+  }
+  svg.innerHTML = `<defs><filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter></defs>` + glow + base;
 })();
 
 // presenter keys: right arrow or space begins the demos
