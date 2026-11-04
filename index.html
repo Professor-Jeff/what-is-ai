@@ -60,11 +60,23 @@
   #qrPanel svg { width: 220px; height: 220px; border: 8px solid #fff; background: #fff; display: block; }
   #qrPanel .qrUrl { font-size: .85rem; color: #6b7280; letter-spacing: .03em; }
   /* when turned on, the QR takes the stage: big, centered in the open area, network dimmed behind it */
-  #qrPanel.open { left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); padding: 26px 32px 22px; gap: 10px; }
+  #qrPanel.open { padding: 26px 32px 22px; gap: 10px; }
   #qrPanel.open .qrTitle { font-size: 1.25rem; }
-  #qrPanel.open svg { width: min(68vw, 62vh, 380px); height: min(68vw, 62vh, 380px); }
   #qrPanel.open .qrUrl { font-size: 1.05rem; }
-  @media (min-width: 1000px) { #qrPanel.open { left: auto; right: 7vw; transform: translateY(-50%); } }
+  /* wide screens: the QR sits in a right-hand column and the title column gives it room, so nothing overlaps */
+  @media (min-width: 1000px) {
+    #qrPanel.open { left: auto; right: 5vw; bottom: auto; top: calc(50% - 16px); transform: translateY(-50%); }
+    #qrPanel.open svg { width: min(52vh, 380px); height: min(52vh, 380px); }
+    body.qrOpen .hero, body.qrOpen .brand { max-width: calc(95vw - 470px - 48px); }
+    body.qrOpen .hero h1 { font-size: clamp(2.6rem, 6.4vw, 6.5rem); }
+    body.qrOpen .hero .subtitle { font-size: clamp(1.05rem, 1.9vw, 1.6rem); }
+  }
+  /* narrower screens: the QR joins the page flow under the title instead of floating over it */
+  @media (max-width: 999px) {
+    #qrPanel.open { position: static; margin: 0 auto 24px; width: max-content; max-width: calc(100vw - 32px); }
+    #qrPanel.open svg { width: min(70vw, 340px); height: min(70vw, 340px); }
+    body.qrOpen .stage { min-height: 0; padding-bottom: 24px; }
+  }
   body.qrOpen #net { opacity: .18; transition: opacity .6s; }
   #net { transition: opacity .6s; }
   /* subtle 2-minute talk timer, upper right, desktop only; click restarts, double-click hides */
@@ -150,6 +162,7 @@ const qrBtn = $("qrBtn"), qrPanel = $("qrPanel");
 function setQr(open) {
   qrPanel.classList.toggle("open", open);
   document.body.classList.toggle("qrOpen", open);
+  if (open && innerWidth < 1000) setTimeout(() => qrPanel.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   qrBtn.textContent = open ? "Hide QR code" : "Show QR code";
   qrBtn.setAttribute("aria-expanded", String(open));
 }
