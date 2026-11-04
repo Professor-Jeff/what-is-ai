@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is AI? — TEDxCOM</title>
+<style>
+  :root { --bg: #0b0b0f; --ink: #f5f5f7; --muted: #9a9aa5; --red: #e62b1e; --line: rgba(255,255,255,.12); --accent: #60a5fa; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); overflow-x: hidden; }
+  .stage { position: relative; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding: 28px 40px 64px; }
+  /* faint network behind everything */
+  #net { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .7; }
+  #net line { stroke-width: 1; }
+  #net circle { fill: var(--bg); stroke-width: 1.5; }
+  @keyframes pulse { 0%, 100% { opacity: .18; } 50% { opacity: .55; } }
+  #net .p { animation: pulse 6s ease-in-out infinite; }
+  /* brand */
+  .brand { position: relative; display: flex; align-items: baseline; gap: 10px; letter-spacing: -.02em; }
+  .brand .ted { color: var(--red); font-weight: 800; font-size: 1.9rem; }
+  .brand .ted small { font-weight: 800; font-size: 1.9rem; }
+  .brand .ev { color: var(--ink); font-weight: 800; font-size: 1.9rem; margin-left: -6px; }
+  .brand .where { color: var(--muted); font-size: .95rem; letter-spacing: .02em; margin-left: 6px; }
+  /* title block */
+  .hero { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 1100px; }
+  .hero h1 { font-size: clamp(3rem, 9vw, 7.5rem); line-height: .98; margin: 0 0 18px; letter-spacing: -.03em; font-weight: 800; }
+  .hero h1 .q { color: var(--red); }
+  .hero .subtitle { font-size: clamp(1.15rem, 2.4vw, 1.9rem); color: var(--muted); margin: 0 0 40px; font-weight: 400; letter-spacing: -.01em; }
+  .speaker { border-left: 3px solid var(--red); padding-left: 16px; margin-bottom: 40px; }
+  .speaker .name { font-size: clamp(1.3rem, 2.6vw, 2rem); font-weight: 700; }
+  .speaker .role { color: var(--muted); font-size: clamp(.95rem, 1.6vw, 1.15rem); margin-top: 2px; }
+  .begin { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; background: var(--red); color: #fff; text-decoration: none; font-weight: 700; font-size: 1.05rem; padding: 12px 20px; border-radius: 999px; }
+  .begin:hover, .begin:focus-visible { background: #ff3b2e; }
+  .begin .key { font-size: .75rem; font-weight: 500; opacity: .8; border: 1px solid rgba(255,255,255,.5); border-radius: 5px; padding: 1px 6px; }
+  /* roadmap */
+  .roadmap { position: relative; display: flex; flex-wrap: wrap; gap: 8px 6px; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .roadmap .lbl { color: var(--muted); font-size: .85rem; margin-right: 8px; align-self: center; }
+  .roadmap a { color: var(--ink); text-decoration: none; font-size: .85rem; padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+  .roadmap a:hover, .roadmap a:focus-visible { border-color: var(--red); }
+  .roadmap a b { color: var(--red); margin-right: 5px; font-weight: 700; }
+  @media (max-width: 700px) {
+    .stage { padding: 20px 18px 64px; }
+    .brand .ted, .brand .ev, .brand .ted small { font-size: 1.4rem; }
+    .brand .where { display: none; }
+    .speaker { margin-bottom: 28px; }
+    .roadmap .lbl { width: 100%; margin: 0; }
+  }
+  /* QR code for presentations (lower left), same as the demo pages */
+  #qrBtn { position: fixed; left: 16px; bottom: 16px; z-index: 20; margin: 0; font: inherit; font-size: .85rem; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: #17171d; color: var(--ink); cursor: pointer; }
+  #qrPanel { position: fixed; left: 16px; bottom: 64px; z-index: 20; display: none; flex-direction: column; align-items: center; gap: 8px; padding: 16px 20px; background: #fff; color: #1c1e21; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  #qrPanel.open { display: flex; }
+  #qrPanel .qrTitle { font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  #qrPanel svg { width: 220px; height: 220px; border: 8px solid #fff; background: #fff; display: block; }
+  #qrPanel .qrUrl { font-size: .85rem; color: #6b7280; letter-spacing: .03em; }
+  @media (max-width: 700px) { #qrPanel svg { width: 160px; height: 160px; } }
+  /* subtle 2-minute talk timer, upper right, desktop only; click restarts, double-click hides */
+  #talkTimer { position: fixed; top: 6px; right: 14px; z-index: 30; font-size: .85rem; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .03em; color: #6b6b75; background: rgba(255,255,255,.06); padding: 4px 9px; border-radius: 999px; cursor: pointer; user-select: none; }
+  #talkTimer.warn { color: #f59e0b; }
+  #talkTimer.over { color: #ef4444; }
+  @media (max-width: 700px) { #talkTimer { display: none; } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg id="net" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+
+  <header class="brand" aria-label="TEDxCOM, College of Marin">
+    <span class="ted">TED<small>x</small></span><span class="ev">COM</span><span class="where">College of Marin</span>
+  </header>
+
+  <main class="hero">
+    <h1>What is AI<span class="q">?</span></h1>
+    <p class="subtitle">A brief introduction to Neural Networks</p>
+    <div class="speaker">
+      <div class="name">Jeff Yates</div>
+      <div class="role">Computer Science · College of Marin</div>
+    </div>
+    <a class="begin" id="begin" href="https://professor-jeff.github.io/pick-activity-rules/">Begin <span class="key">→</span></a>
+  </main>
+
+  <nav class="roadmap" aria-label="The six demos">
+    <span class="lbl">Six demos</span>
+    <a href="https://professor-jeff.github.io/pick-activity-rules/"><b>1</b>If/Else Program</a>
+    <a href="https://professor-jeff.github.io/pick-activity/"><b>2</b>Pick Activity</a>
+    <a href="https://professor-jeff.github.io/matrix-multiply/"><b>3</b>Matrix Multiplication</a>
+    <a href="https://professor-jeff.github.io/tictactoe-nn/"><b>4</b>Tic-Tac-Toe</a>
+    <a href="https://professor-jeff.github.io/happy-face-nn/"><b>5</b>Happy Face</a>
+    <a href="https://professor-jeff.github.io/learning-oracle/"><b>6</b>Learning Oracle</a>
+  </nav>
+</div>
+
+<button id="qrBtn" type="button" aria-expanded="false" aria-controls="qrPanel">Show QR code</button>
+<div id="qrPanel" role="dialog" aria-label="QR code for this page">
+  <div class="qrTitle">Scan to follow along</div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code for https://professor-jeff.github.io/what-is-ai/"><rect width="33" height="33" fill="#fff"/><path fill="#000" d="M0 0h7v1h-7zM8 0h1v1h-1zM10 0h1v1h-1zM14 0h2v1h-2zM17 0h2v1h-2zM21 0h3v1h-3zM26 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM10 1h2v1h-2zM17 1h1v1h-1zM19 1h4v1h-4zM26 1h1v1h-1zM32 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h2v1h-2zM13 2h1v1h-1zM16 2h1v1h-1zM19 2h2v1h-2zM22 2h3v1h-3zM26 2h1v1h-1zM28 2h3v1h-3zM32 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h4v1h-4zM14 3h2v1h-2zM17 3h2v1h-2zM20 3h2v1h-2zM23 3h1v1h-1zM26 3h1v1h-1zM28 3h3v1h-3zM32 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM14 4h1v1h-1zM18 4h3v1h-3zM24 4h1v1h-1zM26 4h1v1h-1zM28 4h3v1h-3zM32 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h5v1h-5zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h1v1h-1zM26 5h1v1h-1zM32 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h7v1h-7zM8 7h1v1h-1zM15 7h3v1h-3zM21 7h1v1h-1zM24 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM6 8h5v1h-5zM17 8h13v1h-13zM32 8h1v1h-1zM0 9h3v1h-3zM4 9h1v1h-1zM8 9h1v1h-1zM10 9h2v1h-2zM13 9h4v1h-4zM18 9h1v1h-1zM22 9h2v1h-2zM25 9h1v1h-1zM29 9h2v1h-2zM3 10h4v1h-4zM9 10h1v1h-1zM11 10h2v1h-2zM15 10h1v1h-1zM17 10h1v1h-1zM20 10h4v1h-4zM26 10h1v1h-1zM29 10h1v1h-1zM31 10h1v1h-1zM1 11h1v1h-1zM3 11h1v1h-1zM8 11h1v1h-1zM10 11h1v1h-1zM14 11h2v1h-2zM17 11h2v1h-2zM20 11h2v1h-2zM24 11h2v1h-2zM31 11h2v1h-2zM0 12h1v1h-1zM4 12h11v1h-11zM18 12h3v1h-3zM24 12h1v1h-1zM26 12h1v1h-1zM28 12h2v1h-2zM0 13h4v1h-4zM7 13h2v1h-2zM10 13h1v1h-1zM12 13h2v1h-2zM16 13h2v1h-2zM19 13h1v1h-1zM22 13h3v1h-3zM27 13h1v1h-1zM29 13h2v1h-2zM4 14h4v1h-4zM12 14h3v1h-3zM16 14h1v1h-1zM18 14h2v1h-2zM22 14h5v1h-5zM28 14h1v1h-1zM30 14h2v1h-2zM0 15h2v1h-2zM3 15h2v1h-2zM7 15h1v1h-1zM14 15h1v1h-1zM17 15h1v1h-1zM19 15h3v1h-3zM23 15h1v1h-1zM25 15h2v1h-2zM2 16h2v1h-2zM6 16h4v1h-4zM14 16h4v1h-4zM20 16h5v1h-5zM26 16h1v1h-1zM28 16h1v1h-1zM31 16h1v1h-1zM0 17h1v1h-1zM3 17h3v1h-3zM14 17h5v1h-5zM21 17h1v1h-1zM23 17h1v1h-1zM29 17h3v1h-3zM1 18h1v1h-1zM3 18h4v1h-4zM8 18h5v1h-5zM15 18h2v1h-2zM18 18h1v1h-1zM23 18h2v1h-2zM27 18h1v1h-1zM29 18h1v1h-1zM0 19h1v1h-1zM2 19h2v1h-2zM14 19h3v1h-3zM19 19h1v1h-1zM22 19h1v1h-1zM24 19h4v1h-4zM31 19h2v1h-2zM0 20h1v1h-1zM3 20h1v1h-1zM6 20h2v1h-2zM9 20h1v1h-1zM11 20h1v1h-1zM14 20h3v1h-3zM22 20h5v1h-5zM28 20h2v1h-2zM0 21h5v1h-5zM7 21h2v1h-2zM10 21h3v1h-3zM14 21h1v1h-1zM18 21h4v1h-4zM23 21h1v1h-1zM25 21h1v1h-1zM31 21h1v1h-1zM3 22h10v1h-10zM14 22h2v1h-2zM18 22h1v1h-1zM20 22h1v1h-1zM23 22h2v1h-2zM27 22h3v1h-3zM31 22h1v1h-1zM2 23h2v1h-2zM7 23h1v1h-1zM9 23h1v1h-1zM11 23h1v1h-1zM13 23h1v1h-1zM15 23h4v1h-4zM21 23h1v1h-1zM23 23h1v1h-1zM28 23h1v1h-1zM0 24h8v1h-8zM17 24h1v1h-1zM19 24h4v1h-4zM24 24h5v1h-5zM8 25h5v1h-5zM15 25h2v1h-2zM18 25h1v1h-1zM22 25h1v1h-1zM24 25h1v1h-1zM28 25h1v1h-1zM30 25h2v1h-2zM0 26h7v1h-7zM8 26h1v1h-1zM10 26h1v1h-1zM13 26h5v1h-5zM20 26h3v1h-3zM24 26h1v1h-1zM26 26h1v1h-1zM28 26h2v1h-2zM31 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM12 27h1v1h-1zM15 27h1v1h-1zM17 27h2v1h-2zM20 27h2v1h-2zM24 27h1v1h-1zM28 27h1v1h-1zM31 27h1v1h-1zM0 28h1v1h-1zM2 28h3v1h-3zM6 28h1v1h-1zM8 28h1v1h-1zM10 28h4v1h-4zM18 28h1v1h-1zM20 28h1v1h-1zM24 28h6v1h-6zM31 28h1v1h-1zM0 29h1v1h-1zM2 29h3v1h-3zM6 29h1v1h-1zM10 29h1v1h-1zM12 29h2v1h-2zM16 29h2v1h-2zM19 29h1v1h-1zM22 29h1v1h-1zM26 29h3v1h-3zM30 29h2v1h-2zM0 30h1v1h-1zM2 30h3v1h-3zM6 30h1v1h-1zM9 30h2v1h-2zM12 30h1v1h-1zM14 30h1v1h-1zM16 30h2v1h-2zM19 30h1v1h-1zM22 30h2v1h-2zM25 30h4v1h-4zM0 31h1v1h-1zM6 31h1v1h-1zM14 31h1v1h-1zM17 31h10v1h-10zM0 32h7v1h-7zM8 32h1v1h-1zM11 32h2v1h-2zM14 32h4v1h-4zM20 32h2v1h-2zM23 32h2v1h-2zM26 32h1v1h-1zM29 32h1v1h-1zM32 32h1v1h-1z"/></svg>
+  <div class="qrUrl">professor-jeff.github.io/what-is-ai</div>
+</div>
+
+<div id="talkTimer" title="2-minute talk timer. Click to restart, double-click to hide." aria-hidden="true">2:00</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// the 2 → 8 → 5 network from the demos, drawn faintly behind the title and slowly breathing
+(() => {
+  const svg = $("net"), W = 1600, H = 900;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const xs = [1000, 1230, 1460], layers = [2, 8, 5];
+  const ys = (n, i) => H / 2 + (i - (n - 1) / 2) * (n === 8 ? 78 : n === 5 ? 120 : 220);
+  let s = "", d = 0;
+  for (let L = 0; L < 2; L++) for (let i = 0; i < layers[L]; i++) for (let j = 0; j < layers[L + 1]; j++) {
+    const warm = (i * 7 + j * 3) % 5 === 0;
+    s += `<line class="p" style="animation-delay:${-(d++ % 23) * 0.37}s" x1="${xs[L]}" y1="${ys(layers[L], i)}" x2="${xs[L + 1]}" y2="${ys(layers[L + 1], j)}" stroke="${warm ? "#e62b1e" : "#60a5fa"}" stroke-opacity="${warm ? .55 : .35}"/>`;
+  }
+  for (let L = 0; L < 3; L++) for (let i = 0; i < layers[L]; i++) s += `<circle cx="${xs[L]}" cy="${ys(layers[L], i)}" r="${L === 1 ? 9 : 13}" stroke="${L === 2 ? "#4ade80" : "#60a5fa"}"/>`;
+  svg.innerHTML = s;
+})();
+
+// presenter keys: right arrow or space begins the demos
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { if (!qrPanel.classList.contains("open")) location.href = $("begin").href; }
+  if (e.key === "Escape") setQr(false);
+});
+
+// QR code toggle so students can find this page during a presentation
+const qrBtn = $("qrBtn"), qrPanel = $("qrPanel");
+function setQr(open) {
+  qrPanel.classList.toggle("open", open);
+  qrBtn.textContent = open ? "Hide QR code" : "Show QR code";
+  qrBtn.setAttribute("aria-expanded", String(open));
+}
+qrBtn.addEventListener("click", () => setQr(!qrPanel.classList.contains("open")));
+
+// 2-minute countdown for pacing the talk: starts on load, click restarts, double-click hides
+(() => {
+  const el = $("talkTimer"), TOTAL = 120;
+  let t0 = Date.now();
+  const tick = () => {
+    const left = Math.max(0, TOTAL - Math.floor((Date.now() - t0) / 1000));
+    el.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+    el.className = left === 0 ? "over" : left <= 30 ? "warn" : "";
+  };
+  tick(); setInterval(tick, 250);
+  el.addEventListener("click", () => { t0 = Date.now(); tick(); });
+  el.addEventListener("dblclick", () => { el.style.display = "none"; });
+})();
+</script>
+</body>
+</html>
